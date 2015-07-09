@@ -34,15 +34,13 @@ function load_static_file(uri, response) {
 var tweet_emitter = new events.EventEmitter();
  
 function get_tweets() {
-    var request = http.request({port: 80, host: "api.twitter.com", method: "GET", path: "/1/statuses/public_timeline.json"});
-     
-    request.addListener("response", function(response) {
+    var request = http.request({port: 80, host: "api.twitter.com", method: "GET", path: "/1/statuses/public_timeline.json"}, function(response){
         var body = "";
-        response.addListener("data", function(data) {
+        response.on("data", function(data) {
             body += data;
         });
          
-        response.addListener("end", function() {
+        response.on("end", function() {
             var tweets = JSON.parse(body);
             if(tweets.length > 0) {
                 tweet_emitter.emit("tweets", tweets);
@@ -57,7 +55,7 @@ setInterval(get_tweets, 5000);
 http.createServer(function(request, response) {
     var uri = url.parse(request.url).pathname;
     if(uri === "/stream") {
-        var listener = tweet_emitter.addListener("tweets", function(tweets) {
+        var listener = tweet_emitter.on("tweets", function(tweets) {
             response.writeHeader(200, { "Content-Type" : "text/plain" });
             response.write(JSON.stringify(tweets));
             response.end();
@@ -70,7 +68,7 @@ http.createServer(function(request, response) {
             response.write(JSON.stringify([]));
             response.end();
              
-            tweet_emitter.removeListener(listener);
+            //tweet_emitter.removeListener("tweets", listener);
         }, 10000);
          
     }
